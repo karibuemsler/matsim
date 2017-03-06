@@ -4,9 +4,12 @@ addons:
   apt:
     packages:
       - oracle-java8-installer  # https://github.com/travis-ci/travis-ci/issues/3259
-install: true                   # Do nothing
+install:
+# First pass: Compile. Two passes so it fails early if something doesn't compile anywhere in the project.
+  - mvn install -B -DskipTests -Dmatsim.preferLocalDtds=true
 script:
-  - mvn test --fail-at-end -B -Dmaven.test.redirectTestOutputToFile -Dmatsim.preferLocalDtds=true
+# Second pass
+  - mvn test -B -Dmaven.test.redirectTestOutputToFile -Dmatsim.preferLocalDtds=true
 env:
   global:
     - MAVEN_OPTS="-Xmx2g"
