@@ -27,16 +27,18 @@ import playground.tschlenther.parkingSearch.utils.TSParkingUtils;
  */
 public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 	private static final Logger logger = Logger.getLogger(BenensonDynLeg.class);
+	private static final boolean logForDebug = false;
+	
 	private Network network;
-	private static final double MIN_THRESHOLD_PROB_FUNCTION = 10;
-	private static final double MAX_THRESHOLD_PROB_FUNCTION = 30;
+	private static final double MIN_THRESHOLD_PROB_FUNCTION = 3;
+	private static final double MAX_THRESHOLD_PROB_FUNCTION = 1;
 	private static final double ACCEPTED_DISTANCE_INCREASING_RATE_PER_MIN = 30;
-	private static final double ACCEPTED_DISTANCE_MAX = 600;
+	private static final double ACCEPTED_DISTANCE_MAX = 400;
 	private final Random random = MatsimRandom.getLocalInstance();
 	
 	//Grenzen für Übergang von Phase 1 -> 2 bzw. 2->3
-	private static final double THRESHOLD_OBSERVING_METER = 500;
-	private static final double THRESHOLD_PARKING_METER = 210;	
+	private static final double THRESHOLD_OBSERVING_METER = 250;
+	private static final double THRESHOLD_PARKING_METER = 100;	
 
 	public BenensonParkingSearchLogic(Network network) {
 		this.network = network;
@@ -107,6 +109,12 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 		List<Id<Link>> keys = new ArrayList<>(currentLink.getToNode().getOutLinks().keySet());
 		do{
 			if(!(nextLink == null)) keys.remove(keys.indexOf(nextLink));
+			
+			if(keys.size() == 0){	//kein outlink in acceptaple Distance
+				keys = new ArrayList<>(currentLink.getToNode().getOutLinks().keySet());
+				logger.error("vehicle " + vehicleId + " finds no outlink in acceptable distance going out from link " + currentLinkId + ". it just takes a random next link");
+				return nextLink;
+			}
 			nextLink= keys.get(random.nextInt(keys.size()));	
 		}
 		while(!isDriverInAcceptableDistance(nextLink, endLinkId, firstDestLinkEnterTime, timeOfDay));
@@ -132,7 +140,7 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 				network.getLinks().get(currentLinkId).getToNode().getCoord(), network.getLinks().get(endLinkId).getToNode().getCoord());
 		double expectedFreeSlots = (pUnoccupied*distToDest/TSParkingUtils.AVGPARKINGSLOTLENGTH);
 		double rnd = Math.random();
-		logger.error("\n current link: "+ currentLinkId + "\n expected slots: " + expectedFreeSlots + "\n probabilty to continue driving: " + getProbabilityOfContinueDriving(expectedFreeSlots) + "\n rnd: " + rnd);
+		if(logForDebug)logger.error("\n current link: "+ currentLinkId + "\n expected slots: " + expectedFreeSlots + "\n probabilty to continue driving: " + getProbabilityOfContinueDriving(expectedFreeSlots) + "\n rnd: " + rnd);
 		if (rnd < getProbabilityOfContinueDriving(expectedFreeSlots)) return false;
 		else return true;
 	}
@@ -171,9 +179,11 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 		//logger.error("\n Distanz zum Ziel: " + distToDest + "\n Anfang Phase 3 : " + firstDestLinkEnterTimer + "\n Jetzt: " + timeOfDay +  "\n Zeit (s) in Phase3: " + timeSpent + "\n akzeptierte Distanz: " + acceptedDistance);
 		
 		if (distToDest <= acceptedDistance){
-			logger.error(" distance between link " + currentLinkId + " and destLink " + endLinkId + ": " + distToDest);
-			logger.error("accepted : " + acceptedDistance);
-			logger.error("time spent: " + timeSpent);
+			if(logForDebug){
+				logger.error(" distance between link " + currentLinkId + " and destLink " + endLinkId + ": " + distToDest);
+				logger.error("accepted : " + acceptedDistance);
+				logger.error("time spent: " + timeSpent);
+			}
 			return true;		
 		}
 		
