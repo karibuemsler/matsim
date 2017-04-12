@@ -12,7 +12,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 public class Myfirstclass {
 
     public static void main(final String[] args) {
-        Config config = ConfigUtils.loadConfig("C:/Users/Thomas/Documents/Git-MATsim/matsim/examples/scenarios/equil/config.xml");
+        Config config = ConfigUtils.loadConfig("C:/Users/Thomas/Documents/GitIntelliJ/matsim/examples/scenarios/equil/config.xml");
         Scenario scenario = ScenarioUtils.loadScenario(config);
         Controler controler = new Controler(scenario);
         controler.run();
